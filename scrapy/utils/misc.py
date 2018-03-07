@@ -35,18 +35,28 @@ def load_object(path):
     path ie: 'scrapy.downloadermiddlewares.redirect.RedirectMiddleware'
     """
 
+    object_path, _, attr = path.partition(':')
+
     try:
-        dot = path.rindex('.')
+        dot = object_path.rindex('.')
     except ValueError:
         raise ValueError("Error loading object '%s': not a full path" % path)
 
-    module, name = path[:dot], path[dot+1:]
+    module, name = object_path[:dot], object_path[dot+1:]
     mod = import_module(module)
 
     try:
         obj = getattr(mod, name)
     except AttributeError:
         raise NameError("Module '%s' doesn't define any object named '%s'" % (module, name))
+
+    if attr:
+        try:
+            obj = getattr(obj, attr)
+        except AttributeError:
+            raise NameError(
+                "Object '%s' doesn't define any attribute named '%s'"
+                % (object_path, attr))
 
     return obj
 
