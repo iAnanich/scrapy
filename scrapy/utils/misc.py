@@ -28,7 +28,7 @@ def arg_to_iter(arg):
         return [arg]
 
 
-def load_object(path):
+def simple_load_object(path):
     """Load an object given its absolute object path, and return it.
 
     object can be a class, function, variable or an instance.
@@ -40,7 +40,7 @@ def load_object(path):
     except ValueError:
         raise ValueError("Error loading object '%s': not a full path" % path)
 
-    module, name = path[:dot], path[dot+1:]
+    module, name = path[:dot], path[dot + 1:]
     mod = import_module(module)
 
     try:
@@ -49,6 +49,34 @@ def load_object(path):
         raise NameError("Module '%s' doesn't define any object named '%s'" % (module, name))
 
     return obj
+
+
+def load_attr(path):
+    # TODO: add good docstring
+
+    importable, colon, getable = path.partition(':')
+
+    if not colon:  # for backward compatibility
+        return simple_load_object(path)
+    if not getable:
+        raise ValueError("Error loading object '%s': not a full path" % path)
+
+    module = obj = import_module(importable)
+
+    try:
+        for attr in getable.split('.'):
+            obj = getattr(obj, attr)
+    except AttributeError:
+        raise NameError(
+            "Module '%s' doesn't define any object named '%s'"
+            " - can't get '%s' attribute of the '%s' object."
+            % (importable, getable, attr, obj))
+
+    return obj
+
+
+# for backward compatibility
+load_object = load_attr
 
 
 def walk_modules(path):
